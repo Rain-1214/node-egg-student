@@ -10,10 +10,12 @@ class UserController extends Controller {
       this.ctx.body = new AjaxReturn(0, '非法参数');
       return;
     }
-    // tslint:disable-next-line:no-console
-    console.log(1);
-    await this.ctx.service.user.login(username, password);
-    this.ctx.body = 'success';
+    const result = await this.ctx.service.user.login(username, password);
+    if (typeof result === 'string') {
+      this.ctx.body = new AjaxReturn(0, result);
+    } else {
+      this.ctx.body = new AjaxReturn(1, 'success', result);
+    }
   }
 
 }
