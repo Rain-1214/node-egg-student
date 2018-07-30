@@ -1,4 +1,5 @@
 import * as Mysql from 'egg-mysql';
+import SessionStore from '../app/public/sessionStore';
 
 declare module 'egg' {
 
@@ -6,6 +7,8 @@ declare module 'egg' {
     mysql: {
       query<T>(sql: string, values?: any[]): T,
     };
+    session: any;
+    redis: any;
   }
 
 }

@@ -14,11 +14,11 @@ class UserService extends Service {
     if (user.length === 0) {
       return '用户不存在';
     }
+    const currentUser = user[0];
     const afterEncryptPass = this.encryption.getEncryptString(password);
-    if (afterEncryptPass !== password) {
+    if (afterEncryptPass !== currentUser.password) {
       return '密码错误';
     }
-    const currentUser = user[0];
     const userAuthor = this.userState.getUserRole(currentUser.authorization as number);
     return {
       uid: currentUser.id as number,
