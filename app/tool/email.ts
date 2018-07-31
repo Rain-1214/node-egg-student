@@ -3,24 +3,21 @@ import { account } from '../../config/email-config';
 
 export class Email {
 
+    private static instance: Email;
     private emailTransport: email.Transporter;
 
-    constructor() {
+    private constructor() {
         this.creatTransport();
     }
 
-    creatTransport() {
-        this.emailTransport = email.createTransport({
-            host: 'smtp.163.com',
-            secure: true,
-            auth: {
-                user: account.user,
-                pass: account.pass,
-            }
-        });
+    public static getInstance(): Email {
+        if (!this.instance) {
+            this.instance = new Email();
+        }
+        return this.instance;
     }
 
-    send(emailAddress: string, subject: string, html: string): Promise<any> {
+    public send(emailAddress: string, subject: string, html: string): Promise<any> {
         return new Promise((resolve, reject) => {
             this.emailTransport.sendMail({
                 from : 'NodeJS Test <wh_test12138@163.com>',
@@ -37,5 +34,15 @@ export class Email {
         });
     }
 
-}
+    private creatTransport() {
+        this.emailTransport = email.createTransport({
+            host: 'smtp.163.com',
+            secure: true,
+            auth: {
+                user: account.user,
+                pass: account.pass,
+            },
+        });
+    }
 
+}

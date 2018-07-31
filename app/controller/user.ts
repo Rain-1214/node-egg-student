@@ -24,12 +24,40 @@ class UserController extends Controller {
   async logout() {
     const uid = this.ctx.session.uid;
     if (uid === undefined) {
+      this.ctx.logger.info(`接收到了未知的登出请求(登录信息不存在)`);
       this.ctx.body = new AjaxReturn(0, '登录信息不存在');
       return;
     }
     delete this.ctx.session.uid;
     this.ctx.logger.info(`用户ID为${uid}的用户登出了`);
     this.ctx.body = new AjaxReturn(1, 'success');
+  }
+
+  async getEmailCode() {
+    const email = this.ctx.body;
+    this.ctx.logger.info(`邮箱为${email}请求发送验证码`);
+    if (!Tool.checkEmail(email)) {
+      this.ctx.logger.info(`邮箱为${email}请求发送验证码,但是邮箱格式未通过验证`);
+      this.ctx.body = new AjaxReturn(0, '邮箱格式错误');
+      return;
+    }
+    const result = await this.ctx.service.user.sendVerificationCode(email);
+    if (typeof result === 'string') {
+      this.ctx.logger.info(`邮箱为${email}请求发送验证码并发送失败。。。`);
+      this.ctx.body = new AjaxReturn(0, result);
+    } else {
+      this.ctx.logger.info(`邮箱为${email}请求发送验证码并发送成功`);
+      this.ctx.body = new AjaxReturn(1, 'success');
+    }
+  }
+
+  async register() {
+    const { username, password, email, code } = this.ctx.body;
+    if (!Tool.checkParamValid(username, password, email, code)){
+      this.ctx.body = new AjaxReturn(0, '非法参数');
+      return;
+    }
+    
   }
 
 }

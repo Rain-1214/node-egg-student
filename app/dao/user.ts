@@ -1,4 +1,5 @@
 import { Application } from 'egg';
+import { SqlRsult } from '../../typings';
 import { User } from '../entity/User';
 
 class UserDao {
@@ -17,6 +18,15 @@ class UserDao {
   public async findUserByUsername (app: Application, username: string): Promise<User[]> {
     const sql = `select * from t_user where username = ?`;
     const result = await app.mysql.query<User[]>(sql, [username]);
+    return result;
+  }
+
+  public async createUser(app: Application, user: User): Promise<SqlRsult> {
+    const sql = `insert into t_user values(null,?,?,?,?,?)`;
+    const result = await app.mysql.query<SqlRsult>(
+      sql,
+      [user.username, user.password, user.email, user.authorization, user.userState],
+    );
     return result;
   }
 
