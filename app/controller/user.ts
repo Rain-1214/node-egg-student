@@ -1,11 +1,16 @@
 import { Controller } from 'egg';
 import AjaxReturn from '../entity/AjaxReturn';
+import { UserState } from '../entity/User';
 import Tool from '../tool/Tool';
 
 class UserController extends Controller {
 
+  private userState: UserState = UserState.getInstance();
+
   async login() {
-    const { username, password } = this.ctx.query;
+    // tslint:disable-next-line:no-console
+    console.log(1);
+    const { username, password } = this.ctx.body;
     if (!Tool.checkParamValid(username, password)) {
       this.ctx.body = new AjaxReturn(0, '非法参数');
       return;
@@ -15,9 +20,9 @@ class UserController extends Controller {
       this.ctx.logger.info(`有用户登录失败，原因：${result},输入用户名和密码为:${username}${password}`);
       this.ctx.body = new AjaxReturn(0, result);
     } else {
-      this.ctx.logger.info(`用户名为${username}登录成功,时间${new Date().toLocaleDateString()}`)
+      this.ctx.logger.info(`用户名为${username}登录成功,时间${new Date().toLocaleDateString()}`);
       this.ctx.session.uid = result.uid;
-      this.ctx.body = new AjaxReturn(1, 'success', result);
+      this.ctx.body = new AjaxReturn(1, 'success', { userAuthor: result.userAuthor });
     }
   }
 
@@ -53,11 +58,20 @@ class UserController extends Controller {
 
   async register() {
     const { username, password, email, code } = this.ctx.body;
-    if (!Tool.checkParamValid(username, password, email, code)){
+    this.ctx.logger.info(`有用户申请注册,注册信息${username},${email}`);
+    if (!Tool.checkParamValid(username, password, email, code)) {
       this.ctx.body = new AjaxReturn(0, '非法参数');
       return;
     }
-    
+    const result = await this.ctx.service.user.register(username, password, email, code);
+    if (typeof result === 'string') {
+      this.ctx.logger.warn(`注册信息格式验证未通过,${result}`);
+      this.ctx.body = new AjaxReturn(0, result);
+    } else {
+      this.ctx.logger.info(`注册成功,注册信息${username},${email}`);
+      this.ctx.app.session.uid = result;
+      this.ctx.body = new AjaxReturn(1, 'success', { userAuthor: this.userState.AUTHOR_VISITOR });
+    }
   }
 
 }

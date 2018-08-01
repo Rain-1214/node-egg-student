@@ -53,12 +53,12 @@ class UserService extends Service {
   async sendVerificationCode(email: string): Promise<string | boolean> {
     this.ctx.logger.info(`向${email}发送验证码`);
     const canUseCode = await this.findLatestCode(email);
-    this.ctx.logger.info(`向邮箱发送新的验证码`);
     this.email.send(email, '验证码', `<p>【NODEJS】 您的验证码为 ${canUseCode} </p>`);
+    this.ctx.logger.info(`向${email}发送验证码成功`);
     return true;
   }
 
-  async register(username: string, password: string, email: string, code: string): Promise<boolean | string> {
+  async register(username: string, password: string, email: string, code: string): Promise<number | string> {
     if (!Tool.checkEmail(email)) {
       return '无效的邮箱';
     }
@@ -93,7 +93,7 @@ class UserService extends Service {
     if (result.changedRows === 1) {
       return '注册失败，请重试';
     }
-    return true;
+    return result.insertId;
   }
 
   private async findLatestCode(email: string): Promise<string | null> {
