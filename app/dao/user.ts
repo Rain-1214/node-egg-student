@@ -30,6 +30,12 @@ class UserDao {
     return result;
   }
 
+  public async fingUserAuthorByUserId(app: Application, userId: number): Promise<number[]> {
+    const sql = "select authorization from t_user where id = ?";
+    const result = await app.mysql.query<number[]>(sql, [userId]);
+    return result;
+  }
+
 }
 
 export default UserDao;

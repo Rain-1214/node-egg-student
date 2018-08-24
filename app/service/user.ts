@@ -53,9 +53,13 @@ class UserService extends Service {
   async sendVerificationCode(email: string): Promise<string | boolean> {
     this.ctx.logger.info(`向${email}发送验证码`);
     const canUseCode = await this.findLatestCode(email);
-    this.email.send(email, '验证码', `<p>【NODEJS】 您的验证码为 ${canUseCode} </p>`);
-    this.ctx.logger.info(`向${email}发送验证码成功`);
-    return true;
+    if (canUseCode) {
+      this.email.send(email, '验证码', `<p>【NODEJS】 您的验证码为 ${canUseCode} </p>`);
+      this.ctx.logger.info(`向${email}发送验证码成功`);
+      return true;
+    } else {
+      return '发送验证码的过程中发生了错误';
+    }
   }
 
   async register(username: string, password: string, email: string, code: string): Promise<number | string> {
@@ -96,6 +100,16 @@ class UserService extends Service {
     return result.insertId;
   }
 
+  public async getUser(userId: number): Promise<User[] | string> {
+    const userAuthor = await this.userdao.fingUserAuthorByUserId(this.app, userId);
+    if (userAuthor.length === 0) {
+      return '获取用户登录信息失败'
+    }
+    if (this.userState.checkAuthor('user', 'all', userAuthor[0])) {
+    }
+    return '';
+  }
+
   private async findLatestCode(email: string): Promise<string | null> {
     const codes = await this.codedao.getCodeByEmailAndCodeState(this.app, email, CodeState.CODE_CAN_USE);
     let canUseCode: string;
@@ -105,7 +119,7 @@ class UserService extends Service {
       if (createCodeResult.result) {
         canUseCode = createCodeResult.codeStr as string;
       } else {
-        this.ctx.logger.warn(`插入新的验证码时发生错误`);
+        this.ctx.logger.error(`插入新的验证码时发生错误`);
         return null;
       }
     } else {
@@ -119,12 +133,12 @@ class UserService extends Service {
           CodeState.CODE_ALREADY_INVALID,
         );
         if (result.affectedRows !== 1) {
-          this.ctx.logger.warn('在修改验证码状态时发生错误');
+          this.ctx.logger.error('在修改验证码状态时发生错误');
           return null;
         }
         const createCodeResult = await this.createVerificationCode(email);
         if (createCodeResult.result) {
-          this.ctx.logger.warn(`插入新的验证码时发生错误`);
+          this.ctx.logger.error(`插入新的验证码时发生错误`);
           canUseCode = createCodeResult.codeStr as string;
         } else {
           return null;

@@ -7,10 +7,14 @@ declare module 'egg' {
     mysql: {
       query<T>(sql: string, values?: any[]): T,
     };
-    session: any;
+    session: SessionState;
     redis: any;
   }
 
+}
+
+interface SessionState {
+  uid: number,
 }
 
 interface SqlRsult {
