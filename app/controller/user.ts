@@ -8,8 +8,6 @@ class UserController extends Controller {
   private userState: UserState = UserState.getInstance();
 
   async login() {
-    // tslint:disable-next-line:no-console
-    console.log(1);
     const { username, password } = this.ctx.body;
     if (!Tool.checkParamValid(username, password)) {
       this.ctx.body = new AjaxReturn(0, '非法参数');
@@ -72,6 +70,10 @@ class UserController extends Controller {
       this.ctx.app.session.uid = result;
       this.ctx.body = new AjaxReturn(1, 'success', { userAuthor: this.userState.AUTHOR_VISITOR });
     }
+  }
+
+  async getUser() {
+    const uid = this.ctx.app.session.uid;
   }
 
 }
