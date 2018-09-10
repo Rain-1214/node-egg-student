@@ -73,7 +73,7 @@ class UserController extends Controller {
   }
 
   async getUser() {
-    const uid = this.ctx.app.session.uid;
+   // const uid = this.ctx.app.session.uid;
   }
 
 }
