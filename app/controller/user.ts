@@ -84,6 +84,13 @@ class UserController extends Controller {
     }
   }
 
+<<<<<<< HEAD
+=======
+  async getUser() {
+   // const uid = this.ctx.app.session.uid;
+  }
+
+>>>>>>> 434291ab8d01271201f2c6fd18f501edb3e0aada
 }
 
 export default UserController;
