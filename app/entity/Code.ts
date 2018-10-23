@@ -6,7 +6,7 @@ export class Code {
         public code?: string,
         public state?: number,
         public time?: number,
-        public email?: string
+        public email?: string,
     ) {}
 
 }

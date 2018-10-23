@@ -31,8 +31,14 @@ class UserDao {
   }
 
   public async fingUserAuthorByUserId(app: Application, userId: number): Promise<number[]> {
-    const sql = "select authorization from t_user where id = ?";
+    const sql = 'select authorization from t_user where id = ?';
     const result = await app.mysql.query<number[]>(sql, [userId]);
+    return result;
+  }
+
+  public async getAllUser (app: Application, start: number, limit: number): Promise<User[]> {
+    const sql = 'select * from t_user limit ?,?';
+    const result = await app.mysql.query<User[]>(sql, [start, limit]);
     return result;
   }
 

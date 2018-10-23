@@ -1,10 +1,10 @@
 
 export default class AjaxReturn<T> {
   stateCode: number;
-  data: T | any;
-  message?: string;
+  message: string;
+  data?: T | any;
 
-  constructor (stateCode: number, message?: string, data?: T | any) {
+  constructor (stateCode: number, message: string, data?: T) {
     this.stateCode = stateCode;
     this.message = message;
     this.data = data;

@@ -54,24 +54,21 @@ class UserService extends Service {
     this.ctx.logger.info(`向${email}发送验证码`);
     const canUseCode = await this.findLatestCode(email);
     if (canUseCode) {
-      this.email.send(email, '验证码', `<p>【NODEJS】 您的验证码为 ${canUseCode} </p>`);
-      this.ctx.logger.info(`向${email}发送验证码成功`);
+      try {
+        await this.email.send(email, '验证码', `<p>【NODEJS】 您的验证码为 ${canUseCode} </p>`);
+        this.ctx.logger.info(`向${email}发送验证码成功`);
+      } catch (error) {
+        this.ctx.logger.info(`向${email}发送验证码失败`);
+        return '发送验证码的过程中发生了错误';
+      }
       return true;
     } else {
+      this.ctx.logger.info(`查找最新验证码时发生了错误`);
       return '发送验证码的过程中发生了错误';
     }
   }
 
   async register(username: string, password: string, email: string, code: string): Promise<number | string> {
-    if (!Tool.checkEmail(email)) {
-      return '无效的邮箱';
-    }
-    if (!Tool.checkValidChar(username)) {
-      return '用户名格式有误';
-    }
-    if (!Tool.checkValidChar(password)) {
-      return '密码格式有误';
-    }
     const users = await this.userdao.findUserByUsername(this.app, username);
     if (users.length !== 0) {
       return '用户名已被占用';
@@ -79,7 +76,7 @@ class UserService extends Service {
     const codeRight = await this.findLatestCode(email);
     if (codeRight) {
       if (codeRight !== code) {
-        return '验证码错误';
+        return '验证码错误或已过期';
       }
     } else {
       this.ctx.logger.info(`查找验证码发生错误`);
@@ -100,15 +97,15 @@ class UserService extends Service {
     return result.insertId;
   }
 
-  public async getUser(userId: number): Promise<User[] | string> {
-    const userAuthor = await this.userdao.fingUserAuthorByUserId(this.app, userId);
-    if (userAuthor.length === 0) {
-      return '获取用户登录信息失败'
-    }
-    if (this.userState.checkAuthor('user', 'all', userAuthor[0])) {
-    }
-    return '';
-  }
+  // public async getUser(userId: number): Promise<User[] | string> {
+  //   const userAuthor = await this.userdao.fingUserAuthorByUserId(this.app, userId);
+  //   if (userAuthor.length === 0) {
+  //     return '获取用户登录信息失败';
+  //   }
+  //   if (this.userState.checkAuthor('user', 'all', userAuthor[0])) {
+  //   }
+  //   return '';
+  // }
 
   private async findLatestCode(email: string): Promise<string | null> {
     const codes = await this.codedao.getCodeByEmailAndCodeState(this.app, email, CodeState.CODE_CAN_USE);
