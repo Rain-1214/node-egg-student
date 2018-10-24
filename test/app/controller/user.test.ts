@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import { app } from 'egg-mock/bootstrap';
 import AjaxReturn from '../../../app/entity/AjaxReturn';
+import { User } from '../../../app/entity/User';
 
 describe('test/app/controller/user.test.ts', () => {
   describe ('should POST /login', async () => {
@@ -245,6 +246,80 @@ describe('test/app/controller/user.test.ts', () => {
       const resultBody: AjaxReturn<any> = JSON.parse(result.text);
       assert.equal(resultBody.stateCode, 0);
       assert.equal(resultBody.message, '密码格式有误');
+    });
+  });
+
+  describe('should POST /getUser', async () => {
+    let ctx;
+    beforeEach(() => {
+      app.mockCsrf();
+      app.mockService('user', 'getUser', (uid) => {
+        return uid === 123 ? '用户无权限' : [new User(1, '123', '123', 'aa@qq.com', 15, 1)];
+      });
+      ctx = app.mockContext({ session: { uid: 123456 } });
+    });
+    it('should POST /getUser success', async () => {
+      const result = await app.httpRequest()
+                              .post('/getUser')
+                              .send({
+                                pageSize: 1,
+                                pageNum: 10,
+                              })
+                              .expect(200);
+      const resultBody: AjaxReturn<any> = JSON.parse(result.text);
+      assert.equal(resultBody.stateCode, 1);
+      assert.equal(resultBody.message, 'success');
+      assert.deepEqual(resultBody.data, [new User(1, '123', '123', 'aa@qq.com', 15, 1)]);
+    });
+    it('should POST /getUser fail(没有登录信息)', async () => {
+      ctx = app.mockContext({ session: {} });
+      const result = await app.httpRequest()
+                              .post('/getUser')
+                              .send({
+                                pageSize: 1,
+                                pageNum: 10,
+                              })
+                              .expect(200);
+      const resultBody: AjaxReturn<any> = JSON.parse(result.text);
+      assert.equal(resultBody.stateCode, 0);
+      assert.equal(resultBody.message, '没有登录信息');
+    });
+    it('should POST /getUser fail(参数无效)', async () => {
+      const result = await app.httpRequest()
+                              .post('/getUser')
+                              .send({
+                                pageSize: '',
+                                pageNum: 10,
+                              })
+                              .expect(200);
+      const resultBody: AjaxReturn<any> = JSON.parse(result.text);
+      assert.equal(resultBody.stateCode, 0);
+      assert.equal(resultBody.message, '无效参数');
+    });
+    it('should POST /getUser fail(pageSize和pageNum必须为整数)', async () => {
+      const result = await app.httpRequest()
+                              .post('/getUser')
+                              .send({
+                                pageSize: 1.2,
+                                pageNum: 10,
+                              })
+                              .expect(200);
+      const resultBody: AjaxReturn<any> = JSON.parse(result.text);
+      assert.equal(resultBody.stateCode, 0);
+      assert.equal(resultBody.message, 'pageSize和pageNum必须为整数');
+    });
+    it('should POST /getUser fail(用户无权限)', async () => {
+      ctx = app.mockContext({ session: { uid: 123 } });
+      const result = await app.httpRequest()
+                              .post('/getUser')
+                              .send({
+                                pageSize: 1,
+                                pageNum: 10,
+                              })
+                              .expect(200);
+      const resultBody: AjaxReturn<any> = JSON.parse(result.text);
+      assert.equal(resultBody.stateCode, 0);
+      assert.equal(resultBody.message, '用户无权限');
     });
   });
 

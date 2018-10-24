@@ -84,13 +84,43 @@ class UserController extends Controller {
     }
   }
 
-<<<<<<< HEAD
-=======
   async getUser() {
-   // const uid = this.ctx.app.session.uid;
+    const uid = this.ctx.session.uid;
+    if (!uid) {
+      this.ctx.body = new AjaxReturn(0, '没有登录信息');
+      return;
+    }
+    this.ctx.logger.info(`用户${uid}获取用户信息`);
+    const { pageSize, pageNum } = this.ctx.request.body;
+    if (!Tool.checkParamValid(pageSize, pageNum)) {
+      this.ctx.logger.info(`参数无效， pageSize: ${pageSize},pageNum: ${pageNum}`);
+      this.ctx.body = new AjaxReturn(0, '无效参数');
+      return;
+    }
+    if (!Number.isInteger(pageSize) || !Number.isInteger(pageNum)) {
+      this.ctx.logger.info(`参数无效， pageSize: ${pageSize},pageNum: ${pageNum}`);
+      this.ctx.body = new AjaxReturn(0, 'pageSize和pageNum必须为整数');
+      return;
+    }
+    const result = await this.ctx.service.user.getUser(uid, pageNum, pageSize);
+    if (typeof result === 'string') {
+      this.ctx.logger.info(`获取用户列表失败, ${result}`);
+      this.ctx.body = new AjaxReturn(0, result);
+    } else {
+      this.ctx.logger.info(`用户ID为${uid}，获取用户列表成功`);
+      this.ctx.body = new AjaxReturn(1, 'success', result);
+    }
   }
 
->>>>>>> 434291ab8d01271201f2c6fd18f501edb3e0aada
+  async forgetPassword() {
+    const username = this.ctx.request.body.username;
+    if (!Tool.checkParamValid(username)) {
+      this.ctx.body = new AjaxReturn(0, '非法参数');
+      return;
+    }
+    this.ctx.logger.info(`${username}用户申请忘记密码`);
+  }
+
 }
 
 export default UserController;

@@ -7,4 +7,5 @@ export default (app: Application) => {
   router.post('/logout', controller.user.logout);
   router.post('/getEmailCode', controller.user.getEmailCode);
   router.put('/register', controller.user.register);
+  router.post('/getUser', controller.user.getUser);
 };

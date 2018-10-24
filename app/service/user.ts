@@ -97,15 +97,18 @@ class UserService extends Service {
     return result.insertId;
   }
 
-  // public async getUser(userId: number): Promise<User[] | string> {
-  //   const userAuthor = await this.userdao.fingUserAuthorByUserId(this.app, userId);
-  //   if (userAuthor.length === 0) {
-  //     return '获取用户登录信息失败';
-  //   }
-  //   if (this.userState.checkAuthor('user', 'all', userAuthor[0])) {
-  //   }
-  //   return '';
-  // }
+  public async getUser(userId: number, pageNum: number, pageSize: number): Promise<User[] | string> {
+    const userAuthor = await this.userdao.fingUserAuthorByUserId(this.app, userId);
+    if (userAuthor.length === 0) {
+      return '获取用户登录信息失败';
+    }
+    if (!this.userState.checkAuthor('user', 'all', userAuthor[0])) {
+      return '您的权限不够';
+    }
+    const start = (pageNum - 1) * pageSize;
+    const users = await this.userdao.getAllUser(this.app, start, pageSize);
+    return users;
+  }
 
   private async findLatestCode(email: string): Promise<string | null> {
     const codes = await this.codedao.getCodeByEmailAndCodeState(this.app, email, CodeState.CODE_CAN_USE);
