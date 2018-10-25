@@ -16,7 +16,7 @@ class CodeDao {
   }
 
   async getCodeByEmailAndCodeState(app: Application, emailAddress: string, codeState: number): Promise<Code[]> {
-    const sql = `select * from t_code where email = ? and codeState = ?`;
+    const sql = `select * from t_code where email = ? and state = ?`;
     const codes = await app.mysql.query<Code[]>(sql, [emailAddress, codeState]);
     return codes;
   }

@@ -34,9 +34,9 @@ class UserService extends Service {
 
   async createVerificationCode(email: string): Promise<{ result: boolean, codeStr?: string, inserteId?: number }> {
     const codeStr = Tool.createRandomNumber(0, 999999).toString().padStart(6, '0');
-    const code = new Code(null, codeStr, CodeState.CODE_CAN_USE, new Date().getTime(), email);
+    const code = new Code(null, codeStr, CodeState.CODE_CAN_USE, Math.floor(new Date().getTime() / 1000), email);
     const result = await this.codedao.createCode(this.app, code);
-    this.ctx.logger.error(`生成验证码错误:${result}`);
+    this.ctx.logger.error(`生成验证码错误:${JSON.stringify(result)}`);
     if (result.changedRows === 1) {
       return {
         result: true,
@@ -75,7 +75,7 @@ class UserService extends Service {
     }
     const codeRight = await this.findLatestCode(email);
     if (codeRight) {
-      if (codeRight !== code) {
+      if (codeRight.canUseCode !== code) {
         return '验证码错误或已过期';
       }
     } else {
@@ -92,13 +92,19 @@ class UserService extends Service {
     );
     const result = await this.userdao.createUser(this.app, user);
     if (result.changedRows === 1) {
+      this.ctx.logger.error(`插入用户信息错误,${JSON.stringify(result)}`)
       return '注册失败，请重试';
+    }
+    const updateCodeStateRes = await this.codedao.updateCodeState(this.app, codeRight.codeId, CodeState.CODE_ALREADY_USEED);
+    if (updateCodeStateRes.affectedRows !== 1) {
+      this.ctx.logger.error(`更新验证码信息错误,${JSON.stringify(updateCodeStateRes)}`)
+      return '未知错误';
     }
     return result.insertId;
   }
 
   public async getUser(userId: number, pageNum: number, pageSize: number): Promise<User[] | string> {
-    const userAuthor = await this.userdao.fingUserAuthorByUserId(this.app, userId);
+    const userAuthor = await this.userdao.findUserAuthorByUserId(this.app, userId);
     if (userAuthor.length === 0) {
       return '获取用户登录信息失败';
     }
@@ -110,21 +116,36 @@ class UserService extends Service {
     return users;
   }
 
-  private async findLatestCode(email: string): Promise<string | null> {
+  public async checkUsernameValid (username: string): Promise<User | string> {
+    const users = await this.userdao.findUserByUsername(this.app ,username);
+    if (users.length === 0) {
+      return '用户不存在';
+    }
+    const currentUser = users[0];
+    const result = await this.sendVerificationCode(currentUser.email as string);
+    if (typeof result === 'string') {
+      return result;
+    }
+    return currentUser;
+  }
+
+  private async findLatestCode(email: string): Promise<{ canUseCode: string, codeId: number } | null> {
     const codes = await this.codedao.getCodeByEmailAndCodeState(this.app, email, CodeState.CODE_CAN_USE);
     let canUseCode: string;
+    let codeId: number = -1;
     if (codes.length === 0) {
       this.ctx.logger.info(`没有查到可用验证码,生成新的验证码`);
       const createCodeResult = await this.createVerificationCode(email);
       if (createCodeResult.result) {
         canUseCode = createCodeResult.codeStr as string;
+        codeId = createCodeResult.inserteId as number;
       } else {
         this.ctx.logger.error(`插入新的验证码时发生错误`);
         return null;
       }
     } else {
       const tempCode = codes[0];
-      this.ctx.logger.info(`查到可用验证码,${tempCode}`);
+      this.ctx.logger.info(`查到可用验证码,${JSON.stringify(tempCode)}`);
       if (!CodeState.checkCodeTimeIsValid(tempCode)) {
         this.ctx.logger.info(`验证码已失效，准备生成新的验证码,${tempCode}`);
         const result = await this.codedao.updateCodeState(
@@ -140,6 +161,7 @@ class UserService extends Service {
         if (createCodeResult.result) {
           this.ctx.logger.error(`插入新的验证码时发生错误`);
           canUseCode = createCodeResult.codeStr as string;
+          codeId = createCodeResult.inserteId as number;
         } else {
           return null;
         }
@@ -147,7 +169,10 @@ class UserService extends Service {
         canUseCode = tempCode.code as string;
       }
     }
-    return canUseCode;
+    return {
+      canUseCode,
+      codeId
+    };
   }
 
 }

@@ -119,6 +119,18 @@ class UserController extends Controller {
       return;
     }
     this.ctx.logger.info(`${username}用户申请忘记密码`);
+    const result = await this.ctx.service.user.checkUsernameValid(username);
+    if (typeof result === 'string') {
+      this.ctx.logger.info(`用户${username}在忘记密码流程当中出现错误, ${result}`);
+      this.ctx.body = new AjaxReturn(0, result);
+      return;
+    }
+    this.ctx.app.session.forgetPassword = {
+      uid: result.id as number,
+      email: result.email as string
+     };
+    this.ctx.logger.info(`用户${username}在忘记密码流程当中，获取验证码成功`);
+    this.ctx.body = new AjaxReturn(1, 'success');
   }
 
 }

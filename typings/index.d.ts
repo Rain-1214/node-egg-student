@@ -15,6 +15,10 @@ declare module 'egg' {
 
 interface SessionState {
   uid: number,
+  forgetPassword: {
+    email: string,
+    uid: number
+  }
 }
 
 interface SqlRsult {
