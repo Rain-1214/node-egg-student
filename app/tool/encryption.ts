@@ -14,9 +14,9 @@ export class Encryption {
     }
 
     getEncryptString(data: string) {
-        const cipher = crypto.createHash('sha1');
+        const cipher = crypto.createHash('sha256');
         cipher.update(data);
-        return cipher.digest().toString();
+        return cipher.digest('hex');
     }
 
     /**
